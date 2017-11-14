@@ -1,6 +1,7 @@
 ﻿using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -18,8 +19,10 @@ namespace TogglExport {
             var timeEntries = await FetchTimeEntries(parameters.ApiKey);
             var projects = await FetchProjects(parameters.ApiKey, timeEntries.Select(entry => entry.Wid).Distinct());
             var outputEntries = MapToOutputEntries(timeEntries, projects);
+            var lines = MapToLines(outputEntries);
+            await File.WriteAllLinesAsync("output.txt", lines);
         }
-        
+
         private static async Task<IList<TimeEntry>> FetchTimeEntries(string apiKey) {
             var client = new TogglClient(apiKey);
 
@@ -38,9 +41,8 @@ namespace TogglExport {
             var tasks = workspaceIds.Select(async id => {
                 var client = new TogglClient(apiKey);
 
-                var request = new RestRequest("workspaces");
-                request.AddParameter("start_date", DateTimeToIso(new DateTime(2017, 11, 1)));
-                request.AddParameter("start_date", DateTimeToIso(new DateTime(2017, 11, 30)));
+                var request = new RestRequest("workspaces/{workspaceId}/projects");
+                request.AddUrlSegment("workspaceId", id);
 
                 return await client.Execute<List<Project>>(request);
             });
@@ -51,12 +53,16 @@ namespace TogglExport {
         
         private static IList<OutputEntry> MapToOutputEntries(IEnumerable<TimeEntry> timeEntries, IEnumerable<Project> projects) {
             return timeEntries.GroupBy(entry => new { entry.Start.Date, entry.Description, entry.Pid })
-                .Select(item => new OutputEntry {
-                    Date = item.Key.Date,
-                    Code = GetProjectName(item.Key.Pid),
-                    Description = item.Key.Description,
-                    Duration = RoundToHalfHours(item.Sum(i => i.Duration)),
-                    Identifier = ParseIdentifier(item.Key.Description)
+                .Select(item => {
+                    (var identifier, var description) = SplitToIdentifierAndDescription(item.Key.Description);
+
+                    return new OutputEntry {
+                        Date = item.Key.Date,
+                        Code = GetProjectName(item.Key.Pid),
+                        Description = description,
+                        Duration = RoundToHalfHours(item.Sum(i => i.Duration)),
+                        Identifier = identifier
+                    };
                 })
                 .ToList();
 
@@ -64,13 +70,22 @@ namespace TogglExport {
 
             double RoundToHalfHours(int durationInSeconds) => Math.Round(durationInSeconds / 3600.0 * 2) / 2;
 
-            string ParseIdentifier(string description) {
-                if (string.IsNullOrEmpty(description)) { return null; }
+            (string, string) SplitToIdentifierAndDescription(string description) {
+                if (string.IsNullOrEmpty(description)) { return (null, description); }
 
-                var first = description.Split(' ').First();
+                var parts = description.Split(' ', 2).Take(2).ToList();
 
-                return Regex.IsMatch(first, @"([A-Z]*-\d*|\d*)") ? first : null;
+                return Regex.IsMatch(parts[0], @"([A-Z]+-\d+|\d+)") && parts.Count() > 1
+                    ? (parts[0], parts[1]) 
+                    : (null, description);
             }
         }
+
+        private static IList<string> MapToLines(IEnumerable<OutputEntry> outputEntries) {
+            return outputEntries
+                .Select(e => $"{e.Date:dd:MM:yyyy}\t{e.Code}\t{e.Duration}\t{e.Description}\t\t{e.Identifier}")
+                .ToList();
+        }
+
     }
 }

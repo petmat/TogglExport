@@ -303,3 +303,6 @@ __pycache__/
 
 # OpenCover UI analysis results
 OpenCover/
+
+# Toggl Export output file
+output.txt
