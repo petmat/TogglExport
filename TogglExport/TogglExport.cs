@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace TogglExport {
     public static class TogglExport {
@@ -8,6 +9,12 @@ namespace TogglExport {
                 Console.WriteLine("Example usage: toggl-export --api-key xxxx");
                 return;
             }
+
+            var timeEntries = FetchTimeEntries(parameters.ApiKey);
+        }
+
+        private static IList<TimeEntry> FetchTimeEntries(string apiKey) {
+            return new List<TimeEntry>();
         }
     }
 }
