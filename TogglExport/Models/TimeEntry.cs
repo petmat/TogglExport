@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TogglExport {
+namespace TogglExport.Models {
     public class TimeEntry {
         public string Description { get; set; }
         public int Wid { get; set; }
