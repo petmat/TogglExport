@@ -14,6 +14,8 @@ namespace TogglExport {
             }
 
             var timeEntries = await FetchTimeEntries(parameters.ApiKey);
+
+
         }
 
         private static async Task<IList<TimeEntry>> FetchTimeEntries(string apiKey) {
@@ -22,7 +24,6 @@ namespace TogglExport {
             };
 
             var request = new RestRequest("time_entries");
-            request.RequestFormat = DataFormat.Json;
             request.AddParameter("start_date", DateTimeToIso(new DateTime(2017, 11, 1)));
             request.AddParameter("start_date", DateTimeToIso(new DateTime(2017, 11, 30)));
 
