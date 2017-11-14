@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace TogglExport {
     public static class TogglExport {
-        public static void Run(string[] args) {
+        public static async Task Run(string[] args) {
             var parameters = Parameters.FromArgs(args);
             if (!parameters.Valid) {
                 Console.WriteLine("Example usage: toggl-export --api-key xxxx");
                 return;
             }
 
-            var timeEntries = FetchTimeEntries(parameters.ApiKey);
+            var timeEntries = await FetchTimeEntries(parameters.ApiKey);
         }
 
         private static async Task<IList<TimeEntry>> FetchTimeEntries(string apiKey) {
