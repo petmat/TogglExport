@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TogglExport.Models;
@@ -16,11 +17,13 @@ namespace TogglExport {
                 return;
             }
 
+            Console.WriteLine("Fetching entries...");
             var timeEntries = await FetchTimeEntries(parameters.ApiKey);
             var projects = await FetchProjects(parameters.ApiKey, timeEntries.Select(entry => entry.Wid).Distinct());
             var outputEntries = MapToOutputEntries(timeEntries, projects);
             var lines = MapToLines(outputEntries);
-            await File.WriteAllLinesAsync("output.txt", lines);
+            await File.WriteAllLinesAsync("output.txt", lines, Encoding.UTF8);
+            Console.WriteLine("Done!");
         }
 
         private static async Task<IList<TimeEntry>> FetchTimeEntries(string apiKey) {
