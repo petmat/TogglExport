@@ -33,7 +33,9 @@ namespace TogglExport {
             request.AddParameter("start_date", DateTimeToIso(new DateTime(2017, 11, 1)));
             request.AddParameter("start_date", DateTimeToIso(new DateTime(2017, 11, 30)));
 
-            return await client.Execute<List<TimeEntry>>(request);
+            return (await client.Execute<List<TimeEntry>>(request)).Where(IsNotRunning).ToList();
+
+            bool IsNotRunning(TimeEntry entry) => entry.Duration >= 0;
         }
 
         private static string DateTimeToIso(DateTime value) {
