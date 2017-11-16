@@ -73,7 +73,7 @@ namespace TogglExport {
 
             string GetProjectName(int projectId) => projects.Single(p => p.Id == projectId).Name;
 
-            double RoundToHalfHours(int durationInSeconds) => Math.Round(durationInSeconds / 3600.0 * 2) / 2;
+            double RoundToHalfHours(int durationInSeconds) => Math.Max(Math.Round(durationInSeconds / 3600.0 * 2) / 2, 0.5);
 
             (string, string) SplitToIdentifierAndDescription(string description) {
                 if (string.IsNullOrEmpty(description)) { return (null, description); }
