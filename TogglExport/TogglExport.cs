@@ -18,7 +18,7 @@ namespace TogglExport {
             }
 
             Console.WriteLine("Fetching entries...");
-            var timeEntries = await FetchTimeEntries(parameters.ApiKey);
+            var timeEntries = ConvertTimesToFleStandard(await FetchTimeEntries(parameters.ApiKey));
             var projects = await FetchProjects(parameters.ApiKey, timeEntries.Select(entry => entry.Wid).Distinct());
             var outputEntries = MapToOutputEntries(timeEntries, projects);
             var lines = MapToLines(outputEntries);
@@ -36,6 +36,19 @@ namespace TogglExport {
             return (await client.Execute<List<TimeEntry>>(request)).Where(IsNotRunning).ToList();
 
             bool IsNotRunning(TimeEntry entry) => entry.Duration >= 0;
+        }
+
+        private static IList<TimeEntry> ConvertTimesToFleStandard(IEnumerable<TimeEntry> entries) {
+            var fleZone = TimeZoneInfo.FindSystemTimeZoneById("FLE Standard Time");
+
+            return entries.Select(entry => new TimeEntry {
+                Description = entry.Description,
+                Wid = entry.Wid,
+                Pid = entry.Pid,
+                Start = TimeZoneInfo.ConvertTimeFromUtc(entry.Start, fleZone),
+                Stop = TimeZoneInfo.ConvertTimeFromUtc(entry.Stop, fleZone),
+                Duration = entry.Duration
+            }).ToList();
         }
 
         private static string DateTimeToIso(DateTime value) {
@@ -57,7 +70,11 @@ namespace TogglExport {
         }
         
         private static IList<OutputEntry> MapToOutputEntries(IEnumerable<TimeEntry> timeEntries, IEnumerable<Project> projects) {
-            return timeEntries.GroupBy(entry => new { entry.Start.Date, entry.Description, entry.Pid })
+            return timeEntries.GroupBy(entry => new {
+                    entry.Start.Date,
+                    entry.Description,
+                    entry.Pid
+                })
                 .Select(item => {
                     (var identifier, var description) = SplitToIdentifierAndDescription(item.Key.Description);
 
