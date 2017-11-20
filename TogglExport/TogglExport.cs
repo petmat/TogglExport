@@ -75,6 +75,8 @@ namespace TogglExport {
                     entry.Description,
                     entry.Pid
                 })
+                .OrderBy(item => item.Key.Date)
+                .ThenBy(item => item.Max(entry => entry.Stop))
                 .Select(item => {
                     (var identifier, var description) = SplitToIdentifierAndDescription(item.Key.Description);
 
